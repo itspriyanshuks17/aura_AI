@@ -41,10 +41,10 @@ You're using 11.2 GB / 16 GB (70%).
 
 ## Install
 
-Requires **Python 3.10+** and [git](https://git-scm.com/downloads).
+Requires **Python 3.10+** and [git](https://github.com/itspriyanshuks17/aura_AI.git).
 
 ```bash
-git clone <this-repo-url> aura && cd aura
+git clone https://github.com/itspriyanshuks17/aura_AI.git && cd aura_AI
 ```
 
 ### Recommended: pipx (isolated global CLI)
