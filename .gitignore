@@ -1,0 +1,28 @@
+# Environment variables
+*.env
+.env*
+!.env.example
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE / editor artifacts
+.vscode/
+.idea/
+*.swp
+*.swo
