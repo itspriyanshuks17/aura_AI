@@ -65,6 +65,42 @@ def github_list_repositories(limit: int = 20) -> list[dict] | dict:
 
 
 @tool(
+    description="Get details about a specific GitHub repository (description, language, stars, forks, default branch, topics, etc.).",
+    parameters={
+        "type": "object",
+        "properties": {
+            "repo": {"type": "string", "description": "Repo in 'owner/name' format."}
+        },
+        "required": ["repo"],
+    },
+    risk=Risk.SAFE,
+)
+def github_get_repository(repo: str) -> dict:
+    def _run():
+        r = _get_client().get_repo(repo)
+        try:
+            topics = r.get_topics()
+        except Exception:
+            topics = []
+        return {
+            "full_name": r.full_name,
+            "description": r.description or "",
+            "url": r.html_url,
+            "private": r.private,
+            "default_branch": r.default_branch,
+            "language": r.language,
+            "stars": r.stargazers_count,
+            "forks": r.forks_count,
+            "open_issues": r.open_issues_count,
+            "topics": topics,
+            "created_at": str(r.created_at) if r.created_at else None,
+            "updated_at": str(r.updated_at) if r.updated_at else None,
+        }
+
+    return _safe(_run)
+
+
+@tool(
     description="List open issues for a specific GitHub repository.",
     parameters={
         "type": "object",
