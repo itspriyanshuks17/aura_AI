@@ -34,8 +34,13 @@ class ChatResult:
 
 
 class Provider:
-    def __init__(self):
-        if settings.provider == "openai":
+    def __init__(self, provider: str | None = None, model: str | None = None):
+        self.provider_name = provider or settings.provider
+        self.model = model or settings.model
+        self._init_client(self.provider_name)
+
+    def _init_client(self, provider_name: str) -> None:
+        if provider_name == "openai":
             if not settings.openai_api_key:
                 raise RuntimeError(
                     "AURA_PROVIDER=openai but OPENAI_API_KEY is not set. "
@@ -44,13 +49,21 @@ class Provider:
             self._client = OpenAI(
                 api_key=settings.openai_api_key, base_url=settings.openai_base_url
             )
-        elif settings.provider == "ollama":
+        elif provider_name == "ollama":
             # Ollama ignores the API key but the client requires a non-empty string
             self._client = OpenAI(api_key="ollama", base_url=settings.ollama_base_url)
         else:
-            raise ValueError(f"Unknown AURA_PROVIDER: {settings.provider!r}")
+            raise ValueError(f"Unknown AURA_PROVIDER: {provider_name!r}")
+        self.provider_name = provider_name
 
-        self.model = settings.model
+    def set_model(self, model_name: str) -> None:
+        """Switch the active model and update the provider backend if needed."""
+        if model_name.startswith(("gpt-", "o1-", "o3-", "chatgpt-")):
+            if self.provider_name != "openai" and settings.openai_api_key:
+                self._init_client("openai")
+        elif self.provider_name == "openai" and not model_name.startswith(("gpt-", "o1-", "o3-")):
+            self._init_client("ollama")
+        self.model = model_name
 
     def chat(self, messages: list[dict], tools: list[dict]) -> ChatResult:
         response = self._client.chat.completions.create(
