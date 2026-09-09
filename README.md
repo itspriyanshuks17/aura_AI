@@ -14,15 +14,15 @@ $ aura
 ╰──────────────────────────────────────────────╯
 
 aura > check my system
-AURA  CPU: 23% | RAM: 10.8 / 16 GB (67%) | Disk: 64% | Docker: 8 running | Git: Clean
+AURA  CPU: 23% | RAM: 10.8 / 16 GB (67%) | Disk: 64% | Docker: 8 running | Git: Clean (1.42s)
 
 aura > show unhealthy docker containers
-AURA  ⚠ backend-api is unhealthy
+AURA  ⚠ backend-api is unhealthy (0.85s)
 
 aura > restart it
 ⚠  'docker_restart_container' wants to run with: name='backend-api'
 Proceed? [y/N]: y
-AURA  Restarted 'backend-api' successfully.
+AURA  Restarted 'backend-api' successfully. (2.10s)
 ```
 
 Or non-interactively, for scripts:
@@ -105,12 +105,30 @@ Or pass flags per-run: `aura --provider openai --model gpt-4o-mini`
 
 ### GitHub tools (optional)
 
-Set `GITHUB_TOKEN` in your `.env` to enable GitHub issue, PR, repository, and workflow inspection.
+Set `GITHUB_TOKEN` in your `.env` to enable GitHub operations:
+- `github_get_repository`: Get full repository details (description, primary language, stars, forks, open issues count, topics, default branch, timestamps).
+- `github_list_repositories`: List authenticated user repositories.
+- `github_list_issues`: List open issues for any repository.
+- `github_create_issue`: Create a new issue (asks for confirmation).
+- `github_list_pull_requests`: List open pull requests for any repository.
+- `github_get_workflow_runs`: Check recent GitHub Actions CI/CD workflow run statuses.
+
+### Response Duration Tracking
+
+Both interactive REPL and one-shot commands automatically measure and print elapsed execution time in seconds (e.g. `(1.42s)`), so you can monitor latency across local models and API backends.
+
+### Multi-Model Support & Dynamic Switching
+
+You can configure multiple models to choose from, or dynamically switch between local and cloud models at runtime:
+- **Configure in `.env`**: Set `AURA_MODELS=llama3.2:3b, qwen3:8b, gpt-4o-mini` to populate a selectable list. If not specified, AURA auto-discovers all locally installed Ollama models.
+- **Interactive Startup Picker**: Launch with `aura --select-model` (or configure multiple `AURA_MODELS`) to choose your active model on launch.
+- **In-Chat Switching**: Use `/model` to view all available models, or `/model <name|#>` to switch instantly without losing conversation history.
 
 ## Usage
 
 ```bash
 aura                       # interactive REPL
+aura --select-model        # pick from available models interactively at launch
 aura "your prompt here"    # one-shot: answer and exit (scriptable)
 aura --version
 aura --help
@@ -118,7 +136,7 @@ aura --provider openai --model gpt-4o-mini "your prompt"   # one-off override
 aura --no-confirm "your prompt"   # skip confirmation prompts (use with care)
 ```
 
-Inside the REPL: `/help`, `/status`, `/tools`, `/history`, `/exit`.
+Inside the REPL: `/help`, `/model`, `/status`, `/tools`, `/history`, `/exit`.
 
 ### Architecture
 
@@ -142,13 +160,13 @@ AURA
 
 ### Security & Risk Levels
 
-AURA never runs arbitrary or unverified shell strings. Every capability is exposed through a strictly typed and schema-validated tool:
+AURA never runs arbitrary or unverified shell strings. Every capability is exposed through a strictly typed and schema-validated tool with context-aware confirmation:
 
-| Risk          | Behavior                                                                   |
-| ------------- | -------------------------------------------------------------------------- |
-| `SAFE`      | Executes immediately (read-only diagnostics, status, lists, logs)          |
-| `CONFIRM`   | Displays intended parameters and asks `[y/N]` before proceeding           |
-| `DANGEROUS` | Requires typing `CONFIRM` explicitly (container removals, shell fallback)  |
+| Risk          | Behavior                                                                                       | Accepted Responses                                                    |
+| ------------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `SAFE`        | Executes immediately (read-only diagnostics, status, lists, logs)                              | None required                                                         |
+| `CONFIRM`     | Shows tool-specific question (e.g. *Restart container 'backend'?*) and asks `[y/N]`            | `Y`, `Yes`, `yep`, `N`, `No`, or statements like *"Yes, restart it"* |
+| `DANGEROUS`   | Displays high-risk warning with action statement (container deletion, restricted shell command) | `Y`, `Yes`, `N`, `No`, or statements like *"Yes, clone it"*           |
 
 ## Project layout
 
@@ -156,6 +174,7 @@ AURA never runs arbitrary or unverified shell strings. Every capability is expos
 aura/
 ├── pyproject.toml        # Hatchling build definition & scripts
 ├── requirements.txt
+├── CHANGELOG.md          # Release history and feature changes
 ├── .env.example
 └── src/aura/
     ├── cli.py             # CLI entry point (REPL + one-shot + init)
