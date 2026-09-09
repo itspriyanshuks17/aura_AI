@@ -27,3 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Replaced the rigid `"Type CONFIRM to proceed"` prompt with human-readable, tool-specific action questions (e.g. *Restart Docker container 'xyz'?*, *Run shell command to clone repository: 'git clone ...'?*).
   - Provides contextual suggested response phrases for each tool (e.g. *"Yes, clone it"*, *"Yes, restart it"*).
   - Accepts flexible affirmative inputs: `Y`, `y`, `Yes`, `yes`, `yep`, or complete statements starting with affirmative keywords (e.g. `"Yes, clone it"`, `"yes, do it"`), while declining on `N`, `no`, or empty input.
+- **Full GitHub AI Suite (17 Tools)** (`src/aura/tools/github_tools.py`, `src/aura/security/permissions.py`):
+  - **User & Org Profiles**: `github_get_user` (fetches name, bio, company, location, public repos count, followers, hireable status for any user) and `github_list_user_repositories` (lists any user's public repositories).
+  - **File & Code Reading**: `github_get_file_content` (reads and decodes any repository file like READMEs, configs, or source files directly with 10KB context guard) and `github_list_directory_contents` (browses file trees).
+  - **Repository Search**: `github_search_repositories` (searches GitHub across repos by keyword, language, or topic).
+  - **Commits & Releases**: `github_list_commits` (fetches recent commit logs with SHAs and messages) and `github_get_latest_release` (inspects release notes and assets).
+  - **Issues & Discussions**: `github_get_issue` (reads issue details, labels, author, and comments) and `github_add_issue_comment` (posts comments with confirmation).
+  - **Pull Requests**: `github_get_pull_request` (inspects PR metadata, branch diffs, mergeability) and `github_create_pull_request` (opens PRs with confirmation).
