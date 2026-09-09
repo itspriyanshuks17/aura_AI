@@ -65,15 +65,32 @@ def _default_memory_path() -> str:
     return os.path.join(user_data_dir(APP_NAME), "memory.json")
 
 
+def _parse_models() -> tuple[str, ...]:
+    raw = _env("MODELS", "")
+    if not raw:
+        raw = _env("MODEL", "")
+    if "," in raw:
+        return tuple(m.strip() for m in raw.split(",") if m.strip())
+    if raw:
+        return (raw.strip(),)
+    return ()
+
+
+def _default_model(provider: str) -> str:
+    parsed = _parse_models()
+    if parsed:
+        return parsed[0]
+    return "gpt-4o-mini" if provider == "openai" else "qwen3:8b"
+
+
 @dataclass(frozen=True)
 class Settings:
     # "ollama" -> free, local, no key needed. "openai" -> cloud, needs OPENAI_API_KEY.
     provider: str = _env("PROVIDER", "ollama")
 
-    model: str = _env(
-        "MODEL",
-        "gpt-4o-mini" if _env("PROVIDER", "ollama") == "openai" else "qwen3:8b",
-    )
+    model: str = _default_model(_env("PROVIDER", "ollama"))
+
+    models: tuple[str, ...] = _parse_models()
 
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
     openai_base_url: str = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
@@ -93,3 +110,36 @@ class Settings:
 
 
 settings = Settings()
+
+
+def get_available_models(refresh_ollama: bool = True) -> list[str]:
+    """Return a list of available models from configuration and local Ollama discovery."""
+    found: list[str] = []
+
+    # 1. Models specified in configuration
+    for m in settings.models:
+        if m and m not in found:
+            found.append(m)
+
+    if settings.model and settings.model not in found:
+        found.insert(0, settings.model)
+
+    # 2. Automatically query local Ollama instance if provider is ollama
+    if refresh_ollama and settings.provider == "ollama":
+        try:
+            import json
+            import urllib.request
+
+            base = settings.ollama_base_url.rstrip("/")
+            tags_url = (base[:-3] if base.endswith("/v1") else base) + "/api/tags"
+            req = urllib.request.Request(tags_url, headers={"User-Agent": "AURA"})
+            with urllib.request.urlopen(req, timeout=1.0) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                for item in data.get("models", []):
+                    name = item.get("name")
+                    if name and name not in found:
+                        found.append(name)
+        except Exception:
+            pass
+
+    return found or [settings.model]
