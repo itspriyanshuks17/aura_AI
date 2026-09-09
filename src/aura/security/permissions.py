@@ -47,6 +47,16 @@ def _get_tool_prompt_details(tool_name: str, arguments: dict) -> tuple[str, str]
         repo = arguments.get("repo", "")
         title = arguments.get("title", "")
         return f"Create GitHub issue '{title}' in '{repo}'?", "Yes, create issue"
+    if tool_name == "github_add_issue_comment":
+        repo = arguments.get("repo", "")
+        num = arguments.get("number", "")
+        return f"Add comment to issue/PR #{num} in '{repo}'?", "Yes, comment"
+    if tool_name == "github_create_pull_request":
+        repo = arguments.get("repo", "")
+        title = arguments.get("title", "")
+        head = arguments.get("head", "")
+        base = arguments.get("base", "main")
+        return f"Open pull request '{title}' ({head} -> {base}) in '{repo}'?", "Yes, open PR"
     if tool_name == "memory_forget":
         key = arguments.get("key", "")
         return f"Forget saved memory key '{key}'?", "Yes, forget it"
