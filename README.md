@@ -103,15 +103,42 @@ OPENAI_API_KEY=sk-...
 
 Or pass flags per-run: `aura --provider openai --model gpt-4o-mini`
 
-### GitHub tools (optional)
+### GitHub AI Suite (optional)
 
-Set `GITHUB_TOKEN` in your `.env` to enable GitHub operations:
-- `github_get_repository`: Get full repository details (description, primary language, stars, forks, open issues count, topics, default branch, timestamps).
-- `github_list_repositories`: List authenticated user repositories.
-- `github_list_issues`: List open issues for any repository.
-- `github_create_issue`: Create a new issue (asks for confirmation).
-- `github_list_pull_requests`: List open pull requests for any repository.
-- `github_get_workflow_runs`: Check recent GitHub Actions CI/CD workflow run statuses.
+Set `GITHUB_TOKEN` in your `.env` to enable full GitHub integration. AURA features 17 specialized GitHub tools:
+
+- **Users & Organizations**:
+  - `github_get_user`: View any GitHub user or organization profile (bio, company, location, public repos count, followers, hireable status, creation date).
+  - `github_list_user_repositories`: List public repos belonging to any specific GitHub user or org.
+  - `github_list_repositories`: List repositories for the authenticated user.
+- **Repositories, Code & Search**:
+  - `github_get_repository`: Detailed repository metadata (stars, forks, open issues, language, topics, default branch).
+  - `github_get_file_content`: Read and decode any file (e.g. `README.md`, `pyproject.toml`, source code) directly from GitHub.
+  - `github_list_directory_contents`: Browse files and subdirectories within a repository path.
+  - `github_search_repositories`: Search GitHub repositories by keyword, language, or topic.
+- **Commits & Releases**:
+  - `github_list_commits`: View recent commit history, authors, and commit messages.
+  - `github_get_latest_release`: Inspect the latest release tag, release notes, and published assets.
+- **Issues & Discussions**:
+  - `github_get_issue`: Full issue details, labels, author, and recent discussion comments.
+  - `github_list_issues`: List open issues for any repository.
+  - `github_create_issue`: Open a new issue (*requires confirmation*).
+  - `github_add_issue_comment`: Add a comment to an existing issue or pull request (*requires confirmation*).
+- **Pull Requests & CI/CD**:
+  - `github_get_pull_request`: Full PR details (mergeable status, changed files, additions/deletions, branches).
+  - `github_list_pull_requests`: List open PRs for any repository.
+  - `github_create_pull_request`: Open a new pull request (*requires confirmation*).
+  - `github_get_workflow_runs`: Check recent GitHub Actions CI/CD workflow run statuses.
+
+#### Example GitHub Prompts in AURA:
+```text
+aura > tell me about itspriyanshuks17
+aura > what repositories does itspriyanshuks17 have?
+aura > read the README.md in itspriyanshuks17/azure_learning
+aura > show the latest commits on itspriyanshuks17/azure_learning
+aura > search github for popular docker terminal agents
+aura > check open issues on Interns-MQI-25/.github-private
+```
 
 ### Response Duration Tracking
 
