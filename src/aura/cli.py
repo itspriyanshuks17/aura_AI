@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+import time
 
 from aura import __version__
 
@@ -76,6 +77,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Skip all confirmation prompts for this run. Use with care — "
         "CONFIRM/DANGEROUS tools will execute immediately.",
     )
+    parser.add_argument(
+        "--select-model",
+        action="store_true",
+        help="Interactively select a model from available models at startup.",
+    )
     return parser
 
 
@@ -115,19 +121,28 @@ def _run_one_shot(prompt: str) -> None:
         console.print(f"[bold red]Failed to start:[/bold red] {exc}")
         sys.exit(1)
 
+    t0 = time.perf_counter()
     with console.status("[dim]thinking...[/dim]"):
         reply = agent.send(prompt)
+    elapsed = time.perf_counter() - t0
     console.print(reply)
+    console.print(f"[dim]({elapsed:.2f}s)[/dim]")
 
 
-def _run_repl() -> None:
+def _run_repl(select_model: bool = False) -> None:
     from rich.prompt import Prompt
 
     from aura.agent import Agent
+    from aura.config import get_available_models, settings
     from aura.tools.registry import registry as tool_registry
-    from aura.ui.display import console, print_banner, print_help, print_history, print_tools
-
-    print_banner()
+    from aura.ui.display import (
+        console,
+        print_banner,
+        print_help,
+        print_history,
+        print_models,
+        print_tools,
+    )
 
     try:
         agent = Agent()
@@ -138,6 +153,23 @@ def _run_repl() -> None:
             "project .env — see .env.example for the available settings.[/dim]"
         )
         sys.exit(1)
+
+    available_models = get_available_models()
+
+    if select_model or len(settings.models) > 1:
+        print_models(available_models, agent.model)
+        choice = Prompt.ask(
+            "[bold cyan]Select model[/bold cyan] (Enter to keep current)",
+            default="",
+            show_default=False,
+        ).strip()
+        if choice:
+            if choice.isdigit() and 1 <= int(choice) <= len(available_models):
+                agent.set_model(available_models[int(choice) - 1])
+            else:
+                agent.set_model(choice)
+
+    print_banner(agent.provider_name, agent.model)
 
     while True:
         try:
@@ -156,6 +188,23 @@ def _run_repl() -> None:
         if stripped == "/help":
             print_help()
             continue
+        if stripped in {"/model", "/models"}:
+            available_models = get_available_models()
+            print_models(available_models, agent.model)
+            continue
+        if stripped.startswith("/model "):
+            target = stripped[len("/model "):].strip()
+            available_models = get_available_models()
+            if target.isdigit() and 1 <= int(target) <= len(available_models):
+                target_model = available_models[int(target) - 1]
+            else:
+                target_model = target
+            agent.set_model(target_model)
+            console.print(
+                f"[bold green]✓ Active model switched to:[/bold green] [bold cyan]{agent.model}[/bold cyan] "
+                f"[dim]({agent.provider_name})[/dim]\n"
+            )
+            continue
         if stripped == "/tools":
             print_tools(tool_registry.by_group())
             continue
@@ -168,10 +217,12 @@ def _run_repl() -> None:
                 "of docker containers with their status."
             )
 
+        t0 = time.perf_counter()
         with console.status("[dim]thinking...[/dim]"):
             reply = agent.send(user_input)
+        elapsed = time.perf_counter() - t0
 
-        console.print(f"[bold cyan]AURA[/bold cyan]  {reply}")
+        console.print(f"[bold cyan]AURA[/bold cyan]  {reply} [dim]({elapsed:.2f}s)[/dim]")
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -201,7 +252,7 @@ def main(argv: list[str] | None = None) -> None:
     if args.prompt:
         _run_one_shot(" ".join(args.prompt))
     else:
-        _run_repl()
+        _run_repl(select_model=args.select_model)
 
 
 if __name__ == "__main__":
