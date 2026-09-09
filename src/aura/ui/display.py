@@ -12,13 +12,15 @@ from aura.config import settings
 console = Console()
 
 
-def print_banner():
+def print_banner(provider: str | None = None, model: str | None = None):
+    p = provider or settings.provider
+    m = model or settings.model
     banner_text = (
         "\n[bold cyan]AURA[/bold cyan]\n"
         "[bold white]Autonomous Utility & Runtime[/bold white]\n"
         "[bold white]Assistant[/bold white]\n\n"
-        f"[dim]provider:[/dim] [cyan]{settings.provider}[/cyan]   "
-        f"[dim]model:[/dim] [cyan]{settings.model}[/cyan]\n"
+        f"[dim]provider:[/dim] [cyan]{p}[/cyan]   "
+        f"[dim]model:[/dim] [cyan]{m}[/cyan]\n"
     )
     console.print(
         Panel(
@@ -30,7 +32,7 @@ def print_banner():
         )
     )
     console.print(
-        "[dim]Type naturally, or use /help /status /tools /history /exit[/dim]\n"
+        "[dim]Type naturally, or use /help /status /tools /model /history /exit[/dim]\n"
     )
 
 
@@ -39,9 +41,24 @@ def print_help():
     table.add_row("/help", "Show this help")
     table.add_row("/status", "Quick system + docker snapshot")
     table.add_row("/tools", "List all available tools by group")
+    table.add_row("/model [name|#]", "View available models or switch active model")
     table.add_row("/history", "Show this session's conversation so far")
     table.add_row("/exit", "Quit")
     console.print(table)
+
+
+def print_models(models: list[str], active: str):
+    table = Table(title="Available Models", box=box.ROUNDED)
+    table.add_column("#", style="dim", width=4)
+    table.add_column("Model Name")
+    table.add_column("Status")
+    for i, m in enumerate(models, 1):
+        is_active = (m == active)
+        status = "[bold green]✓ active[/bold green]" if is_active else ""
+        name_styled = f"[bold cyan]{m}[/bold cyan]" if is_active else m
+        table.add_row(str(i), name_styled, status)
+    console.print(table)
+    console.print("[dim]Switch model via: /model <number or name>[/dim]\n")
 
 
 def print_tools(groups: dict):
