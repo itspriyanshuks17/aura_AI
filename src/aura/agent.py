@@ -45,6 +45,17 @@ class Agent:
         self.provider = get_provider()
         self.messages: list[dict] = [{"role": "system", "content": SYSTEM_PROMPT}]
 
+    @property
+    def model(self) -> str:
+        return self.provider.model
+
+    @property
+    def provider_name(self) -> str:
+        return self.provider.provider_name
+
+    def set_model(self, model_name: str) -> None:
+        self.provider.set_model(model_name)
+
     def _execute_tool_call(self, name: str, arguments: dict) -> dict:
         registered = tool_registry.get(name)
         if registered is None:
